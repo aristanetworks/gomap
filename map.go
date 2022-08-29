@@ -125,8 +125,8 @@ type Map[K, E any] struct {
 	nevacuate int // progress counter for evacuation (buckets less than this have been evacuated)
 	seed      maphash.Seed
 
-	hasher func(maphash.Seed, K) uint64
-	equals func(K, K) bool
+	hash  func(maphash.Seed, K) uint64
+	equal func(K, K) bool
 }
 
 type bucket[K, E any] struct {
@@ -206,30 +206,37 @@ type KeyElem[K, E any] struct {
 }
 
 // New instantiates a new Map initialized with any KeyElems passed.
+// The equal func must return true for two values of K that are equal
+// and false otherwise. The hash func should return a uniformly
+// distributed hash value. If equal(a, b) then hash(a) == hash(b). The
+// hash function is passed a [hash/maphash.Seed], this is meant to be
+// used with functions and types in the [hash/maphash] package, though
+// can be ignored.
 func New[K, E any](
-	equals func(a, b K) bool,
-	hasher func(maphash.Seed, K) uint64,
+	equal func(a, b K) bool,
+	hash func(maphash.Seed, K) uint64,
 	kes ...KeyElem[K, E]) *Map[K, E] {
 
 	if len(kes) == 0 {
-		return NewHint[K, E](0, equals, hasher)
+		return NewHint[K, E](0, equal, hash)
 	}
-	m := NewHint[K, E](len(kes), equals, hasher)
+	m := NewHint[K, E](len(kes), equal, hash)
 	for _, ke := range kes {
 		m.Set(ke.Key, ke.Elem)
 	}
 	return m
 }
 
-// NewHint instantiates a new Map with a hint as to how many
-// elements will be inserted.
+// NewHint instantiates a new Map with a hint as to how many elements
+// will be inserted. See [New] for discussion of the equal and hash
+// arguments.
 func NewHint[K, E any](
 	hint int,
-	equals func(a, b K) bool,
-	hasher func(maphash.Seed, K) uint64) *Map[K, E] {
+	equal func(a, b K) bool,
+	hash func(maphash.Seed, K) uint64) *Map[K, E] {
 
 	if hint <= 0 {
-		return &Map[K, E]{seed: maphash.MakeSeed(), hasher: hasher, equals: equals}
+		return &Map[K, E]{seed: maphash.MakeSeed(), hash: hash, equal: equal}
 	}
 	nbuckets := 1
 	for overLoadFactor(hint, nbuckets) {
@@ -238,7 +245,7 @@ func NewHint[K, E any](
 	buckets := makeBucketArray[K, E](nbuckets)
 
 	return &Map[K, E]{seed: maphash.MakeSeed(), buckets: buckets, nextoverflow: len(buckets),
-		hasher: hasher, equals: equals}
+		hash: hash, equal: equal}
 }
 
 func makeBucketArray[K, E any](nbuckets int) []bucket[K, E] {
@@ -284,7 +291,7 @@ func (m *Map[K, E]) Get(key K) (E, bool) {
 	// if m.flags&hashWriting != 0 {
 	// 	panic("concurrent map read and map write")
 	// }
-	hash := m.hasher(m.seed, key)
+	hash := m.hash(m.seed, key)
 	mask := m.bucketMask()
 	b := &m.buckets[int(hash&mask)]
 	if c := m.oldbuckets; c != nil {
@@ -307,7 +314,7 @@ bucketloop:
 				}
 				continue
 			}
-			if m.equals(key, b.keys[i]) {
+			if m.equal(key, b.keys[i]) {
 				return b.elems[i], true
 			}
 		}
@@ -327,7 +334,7 @@ func (m *Map[K, E]) mapaccessK(key K) (*K, *E) {
 	// if m.flags&hashWriting != 0 {
 	// 	panic("concurrent map read and map write")
 	// }
-	hash := m.hasher(m.seed, key)
+	hash := m.hash(m.seed, key)
 	mask := m.bucketMask()
 	b := &m.buckets[int(hash&mask)]
 	if c := m.oldbuckets; c != nil {
@@ -350,7 +357,7 @@ bucketloop:
 				}
 				continue
 			}
-			if m.equals(key, b.keys[i]) {
+			if m.equal(key, b.keys[i]) {
 				return &b.keys[i], &b.elems[i]
 			}
 		}
@@ -362,15 +369,15 @@ bucketloop:
 func (m *Map[K, E]) Set(key K, elem E) {
 	if m == nil {
 		// We have to panic here rather than initialize an empty map
-		// because we need the user to pass in hash and equals
+		// because we need the user to pass in hash and equal
 		// functions
 		panic("Set called on nil map")
 	}
 	if m.flags&hashWriting != 0 {
 		panic("concurrent map writes")
 	}
-	hash := m.hasher(m.seed, key)
-	// Set hashWriting after calling t.hasher, since t.hasher may panic,
+	hash := m.hash(m.seed, key)
+	// Set hashWriting after calling t.hash, since t.hash may panic,
 	// in which case we have not actually done a write.
 	m.flags ^= hashWriting
 
@@ -406,7 +413,7 @@ bucketloop:
 				continue
 			}
 			k := b.keys[i]
-			if !m.equals(key, k) {
+			if !m.equal(key, k) {
 				continue
 			}
 			// already have a mapping for key. Update it.
@@ -462,9 +469,9 @@ func (m *Map[K, E]) Delete(key K) {
 		panic("concurrent map writes")
 	}
 
-	hash := m.hasher(m.seed, key)
+	hash := m.hash(m.seed, key)
 
-	// Set hashWriting after calling t.hasher, since t.hasher may panic,
+	// Set hashWriting after calling t.hash, since t.hash may panic,
 	// in which case we have not actually done a write (delete).
 	m.flags ^= hashWriting
 
@@ -485,7 +492,7 @@ search:
 				continue
 			}
 			k := b.keys[i]
-			if !m.equals(key, k) {
+			if !m.equal(key, k) {
 				continue
 			}
 			var (
@@ -647,7 +654,7 @@ next:
 			// buckets during a grow).
 			// If the item in the oldbucket is not destined for
 			// the current new bucket in the iteration, skip it.
-			hash := m.hasher(m.seed, k)
+			hash := m.hash(m.seed, k)
 			if int(hash&m.bucketMask()) != checkBucket {
 				continue
 			}
@@ -832,7 +839,7 @@ func (m *Map[K, E]) evacuate(oldbucket int) {
 				if !m.sameSizeGrow() {
 					// Compute hash to make our evacuation decision (whether we need
 					// to send this key/elem to bucket x or bucket y).
-					hash := m.hasher(m.seed, b.keys[i])
+					hash := m.hash(m.seed, b.keys[i])
 					if hash&uint64(newbit) != 0 {
 						useY = 1
 					}
