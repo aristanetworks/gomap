@@ -297,45 +297,11 @@ func (m *Map[K, E]) Len() int {
 // in the Map, otherwise it returns the zero value of E and false.
 func (m *Map[K, E]) Get(key K) (E, bool) {
 	var zeroE E
-	if m == nil || m.count == 0 {
+	_, e := m.mapaccessK(key)
+	if e == nil {
 		return zeroE, false
 	}
-	// The stdlib map uses the following code to do a cheap runtime
-	// check of concurrent reads and writes. Unfortunately, if done
-	// here the race detector will flag it.
-	//
-	// if m.flags&hashWriting != 0 {
-	// 	panic("concurrent map read and map write")
-	// }
-	hash := m.hash(m.seed, key)
-	mask := m.bucketMask()
-	b := &m.buckets[int(hash&mask)]
-	if c := m.oldbuckets; c != nil {
-		if !m.sameSizeGrow() {
-			// There used to be half as many buckets; mask down one more power of two.
-			mask >>= 1
-		}
-		oldb := &(*c)[int(hash&mask)]
-		if !evacuated(oldb) {
-			b = oldb
-		}
-	}
-	top := tophash(hash)
-bucketloop:
-	for ; b != nil; b = b.overflow {
-		for i := uintptr(0); i < bucketCnt; i++ {
-			if b.tophash[i] != top {
-				if b.tophash[i] == emptyRest {
-					break bucketloop
-				}
-				continue
-			}
-			if m.equal(key, b.keys[i]) {
-				return b.elems[i], true
-			}
-		}
-	}
-	return zeroE, false
+	return *e, true
 }
 
 // returns both key and elem. Used by map iterator
