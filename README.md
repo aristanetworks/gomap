@@ -14,6 +14,8 @@ built-in `map` including:
 
 - iteration that is not invalidated by modifications to the map
 
+- randomized hash seeds and randomized iteration order
+
 - progressive resize
 
 - cheap best effort detection of unsafe concurrent writes
