@@ -266,3 +266,24 @@ func TestIter(t *testing.T) {
 		t.Errorf("Values not found in m: %v", expecting)
 	}
 }
+
+func TestClear(t *testing.T) {
+	m := New(
+		func(a, b string) bool { return a == b },
+		maphash.String,
+		KeyElem[string, string]{"a", "a"},
+		KeyElem[string, string]{"b", "b"},
+		KeyElem[string, string]{"c", "c"},
+		KeyElem[string, string]{"d", "d"},
+	)
+	if m.Len() != 4 {
+		t.Fatalf("Unexpected size after New (%d): %s", m.Len(), m.debugString())
+	}
+	m.Clear()
+	if m.Len() != 0 {
+		t.Errorf("expected empty map: %s", m.debugString())
+	}
+	for i := m.Iter(); i.Next(); {
+		t.Errorf("unexpected entry in map: [%s: %s]", i.Key(), i.Elem())
+	}
+}

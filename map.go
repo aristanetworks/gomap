@@ -572,7 +572,7 @@ search:
 // Ordering is undefined and is intentionally randomized.
 func (m *Map[K, E]) Iter() *Iterator[K, E] {
 	if m == nil || m.count == 0 {
-		return nil
+		return &Iterator[K, E]{}
 	}
 	r := rand.Uint64()
 	it := Iterator[K, E]{
@@ -604,6 +604,9 @@ func atomicOr(flags *uint32, or uint32) {
 // when the iterator is complete.
 func (it *Iterator[K, E]) Next() bool {
 	m := it.m
+	if m == nil {
+		return false
+	}
 	// The stdlib map uses the following code to do a cheap runtime
 	// check of concurrent reads and writes. Unfortunately, if done
 	// here the race detector will flag it.
