@@ -2,6 +2,22 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Pacakge gomap provides the Map type, which implements a hash table.
+// It's implementation is heavily inspired by Go's built-in map, with
+// the additional requirement that users provide a equal and hash
+// function.
+//
+// The following requirements are the user's responsibility to follow:
+//   - equal(a, b) => hash(a) == hash(b)
+//   - equal(a, a) must be true for all values of a. Be careful around NaN
+//     float values. Go's built-in `map` has special cases for handling
+//     this, but `Map` does not.
+//   - If a key in a `Map` contains references -- such as pointers, maps,
+//     or slices -- modifying the referefenced data in a way that effects
+//     the result of the equal or hash functions will result in undefined
+//     behavior.
+//   - For good performance hash functions should return uniformly
+//     distributed data across the entire 64-bits of the value.
 package gomap
 
 // This file contains a reimplementation of Go's map type using type
