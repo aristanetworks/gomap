@@ -15,8 +15,8 @@ import (
 
 func (m *Map[K, E]) debugString() string {
 	var buf strings.Builder
-	fmt.Fprintf(&buf, "count: %d, buckets: %d, overflows: %d\n",
-		m.count, len(m.buckets), m.noverflow)
+	fmt.Fprintf(&buf, "count: %d, buckets: %d, overflows: %d growing: %t\n",
+		m.count, len(m.buckets), m.noverflow, m.growing())
 
 	for i, b := range m.buckets {
 		fmt.Fprintf(&buf, "bucket: %d\n", i)
@@ -292,5 +292,83 @@ func TestClear(t *testing.T) {
 	}
 	for i := m.Iter(); i.Next(); {
 		t.Errorf("unexpected entry in map: [%s: %s]", i.Key(), i.Elem())
+	}
+}
+
+func TestIterResize(t *testing.T) {
+	m := New[uint64, uint64](
+		func(a, b uint64) bool { return a == b },
+		badIntHash,
+	)
+
+	// insert numbers that initially hash to the same bucket, but will
+	// be split into different buckets on resize.
+	initial := map[uint64]uint64{0: 0, 1: 1, 2: 2, 3: 3}
+	for k, e := range initial {
+		m.Set(k, e)
+	}
+	// create the iter
+	i := m.Iter()
+	// Add some additional data to cause a resize
+	additional := map[uint64]uint64{100: 100, 101: 101, 102: 102, 103: 103, 104: 104}
+	for k, e := range additional {
+		m.Set(k, e)
+	}
+
+	// Remove 1 value that in each of the initial and split buckets
+	m.Delete(0)
+	delete(initial, 0)
+	m.Delete(1)
+	delete(initial, 1)
+	for i.Next() {
+		if i.Key() != i.Elem() {
+			t.Errorf("expected key == elem, but got: %d != %d", i.Key(), i.Elem())
+			t.Error(m.debugString())
+		}
+		if _, ok := initial[i.Key()]; ok {
+			delete(initial, i.Key())
+			continue
+		}
+		if _, ok := additional[i.Key()]; ok {
+			t.Logf("Saw key from additional: %d", i.Key())
+			continue
+		}
+		t.Errorf("Unexpected value from iter: %d", i.Key())
+	}
+	for k := range initial {
+		t.Errorf("iter missing key: %d", k)
+	}
+}
+
+func TestIterDuringGrow(t *testing.T) {
+	m := New[uint64, uint64](
+		func(a, b uint64) bool { return a == b },
+		badIntHash,
+	)
+
+	// Insert exactly 27 numbers so we end up in the middle of a grow.
+	expected := make(map[uint64]uint64, 27)
+	for i := uint64(0); i < 27; i++ {
+		expected[i] = i
+		m.Set(i, i)
+	}
+	// create the iter while Map is growing
+	i := m.Iter()
+
+	for i.Next() {
+		t.Logf("Key: %d", i.Key())
+		if i.Key() != i.Elem() {
+			t.Errorf("expected key == elem, but got: %d != %d", i.Key(), i.Elem())
+			t.Error(m.debugString())
+		}
+
+		if _, ok := expected[i.Key()]; ok {
+			delete(expected, i.Key())
+			continue
+		}
+		t.Errorf("Unexpected value from iter: %d", i.Key())
+	}
+	for k := range expected {
+		t.Errorf("iter missing key: %d", k)
 	}
 }
