@@ -241,29 +241,36 @@ func TestGetIterateRace(t *testing.T) {
 	wg.Wait()
 }
 
+// badIntHash is a bad hash function that gives simple deterministic
+// hash to give control over which bucket a key lands in.
+func badIntHash(seed maphash.Seed, a uint64) uint64 {
+	return uint64(a)
+}
+
 func TestIter(t *testing.T) {
-	expecting := map[string]string{"Avenue": "AVE", "Street": "ST", "Court": "CT"}
-	m := New[string, string](
-		func(a, b string) bool { return a == b },
-		maphash.String,
+	m := New[uint64, uint64](
+		func(a, b uint64) bool { return a == b },
+		badIntHash,
 	)
-	for k, v := range expecting {
-		m.Set(k, v)
+	expected := make(map[uint64]uint64, 9)
+	for i := uint64(0); i < 9; i++ {
+		expected[i] = i
+		m.Set(i, i)
 	}
 	for i := m.Iter(); i.Next(); {
-		e, ok := expecting[i.Key()]
+		e, ok := expected[i.Key()]
 		if !ok {
-			t.Errorf("unexpected value in m: [%s: %s]", i.Key(), i.Elem())
+			t.Errorf("unexpected value in m: [%d: %d]", i.Key(), i.Elem())
 			continue
 		}
 		if e != i.Elem() {
-			t.Errorf("wrong value for key %q. Expected: %s Got: %s", i.Key(), e, i.Elem())
+			t.Errorf("wrong value for key %d. Expected: %d Got: %d", i.Key(), e, i.Elem())
 			continue
 		}
-		delete(expecting, i.Key())
+		delete(expected, i.Key())
 	}
-	if len(expecting) > 0 {
-		t.Errorf("Values not found in m: %v", expecting)
+	if len(expected) > 0 {
+		t.Errorf("Values not found in m: %v", expected)
 	}
 }
 

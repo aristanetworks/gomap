@@ -551,6 +551,7 @@ func (m *Map[K, E]) Iter() *Iterator[K, E] {
 		startBucket: int(r & m.bucketMask()),
 		offset:      uint8(r >> (64 - bucketCntBits)),
 	}
+	it.bucket = it.startBucket
 
 	// Remember we have an iterator.
 	// Can run concurrently with another m.Iter().
