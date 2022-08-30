@@ -14,6 +14,8 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"golang.org/x/exp/slices"
 )
 
 func (m *Map[K, E]) debugString() string {
@@ -388,9 +390,28 @@ func TestString(t *testing.T) {
 		t.Errorf("Got: %q Expected: %q", s, expected)
 	}
 
-	s = String(m, func(b []byte) string { return string(b) }, func(struct{}) string {return "✅"})
+	s = String(m, func(b []byte) string { return string(b) }, func(struct{}) string { return "✅" })
 	expected = "gomap.Map[abc:✅ def:✅ ghi:✅]"
 	if s != expected {
 		t.Errorf("Got: %q Expected: %q", s, expected)
+	}
+}
+
+func TestUpdate(t *testing.T) {
+	m := New[int, []int](
+		func(a, b int) bool { return a == b },
+		intHash)
+	for key := 0; key < 10; key++ {
+		var expected []int
+		for i := 0; i < 3; i++ {
+			m.Update(key, func(cur []int) []int { return append(cur, 1) })
+			expected = append(expected, 1)
+			got, ok := m.Get(key)
+			if !ok {
+				t.Errorf("m missing key: %v", key)
+			} else if !slices.Equal(got, expected) {
+				t.Errorf("Got: %v Expected: %v", got, expected)
+			}
+		}
 	}
 }

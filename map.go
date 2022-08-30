@@ -446,6 +446,110 @@ done:
 	m.flags &^= hashWriting
 }
 
+// Update calls fn with the elem associated with key, or the zero
+// value of E if key is not present, the value returned by fn will be
+// set in the map.
+//
+// Update is equivalent to:
+//
+//	elem, _ := m.Get(key)
+//	m.Set(fn(elem))
+func (m *Map[K, E]) Update(key K, fn func(elem E) E) {
+	if m == nil {
+		// We have to panic here rather than initialize an empty map
+		// because we need the user to pass in hash and equal
+		// functions
+		panic("Set called on nil map")
+	}
+	if m.flags&hashWriting != 0 {
+		panic("concurrent map writes")
+	}
+	hash := m.hash(m.seed, key)
+	// Set hashWriting after calling t.hash, since t.hash may panic,
+	// in which case we have not actually done a write.
+	m.flags ^= hashWriting
+
+	if m.buckets == nil {
+		m.buckets = make([]bucket[K, E], 1)
+		m.nextoverflow = len(m.buckets)
+	}
+
+	var zeroE E
+
+again:
+	mask := m.bucketMask()
+	bucket := hash & mask
+	if m.growing() {
+		m.growWork(int(bucket))
+	}
+	b := &m.buckets[hash&mask]
+	top := tophash(hash)
+
+	var inserti *uint8
+	var insertk *K
+	var inserte *E
+bucketloop:
+	for {
+		for i := uintptr(0); i < bucketCnt; i++ {
+			if b.tophash[i] != top {
+				if isEmpty(b.tophash[i]) && inserti == nil {
+					inserti = &b.tophash[i]
+					insertk = &b.keys[i]
+					inserte = &b.elems[i]
+				}
+				if b.tophash[i] == emptyRest {
+					break bucketloop
+				}
+				continue
+			}
+			k := b.keys[i]
+			if !m.equal(key, k) {
+				continue
+			}
+			// already have a mapping for key. Update it.
+			b.keys[i] = key
+			b.elems[i] = fn(b.elems[i])
+			goto done
+		}
+		ovf := b.overflow
+		if ovf == nil {
+			break
+		}
+		b = ovf
+	}
+
+	// Did not find mapping for key. Allocate new cell & add entry.
+
+	// If we hit the max load factor or we have too many overflow buckets,
+	// and we're not already in the middle of growing, start growing.
+	if !m.growing() && (overLoadFactor(m.count+1, len(m.buckets)) ||
+		tooManyOverflowBuckets(m.noverflow, len(m.buckets))) {
+		m.hashGrow()
+		goto again // Growing the table invalidates everything, so try again
+	}
+
+	if inserti == nil {
+		// The current bucket and all the overflow buckets connected
+		// to it are full, allocate a new one.
+		newb := m.newoverflow(b)
+		inserti = &newb.tophash[0]
+		insertk = &newb.keys[0]
+		inserte = &newb.elems[0]
+	}
+
+	// store new key/elem at insert position
+	*insertk = key
+	*inserte = fn(zeroE)
+	*inserti = top
+	m.count++
+
+done:
+	if m.flags&hashWriting == 0 {
+		panic("concurrent map writes")
+	}
+	m.flags &^= hashWriting
+}
+
 // Delete removes key and it's associated value from the map.
 func (m *Map[K, E]) Delete(key K) {
 	if m == nil || m.count == 0 {
