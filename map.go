@@ -76,8 +76,6 @@ package gomap
 import (
 	"hash/maphash"
 	"sync/atomic"
-
-	"golang.org/x/exp/rand"
 )
 
 const (
@@ -542,7 +540,7 @@ func (m *Map[K, E]) Iter() *Iterator[K, E] {
 	if m == nil || m.count == 0 {
 		return &Iterator[K, E]{}
 	}
-	r := rand.Uint64()
+	r := fastrand64()
 	it := Iterator[K, E]{
 		m: m,
 
