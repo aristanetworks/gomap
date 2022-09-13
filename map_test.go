@@ -7,6 +7,7 @@
 package gomap
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"hash/maphash"
@@ -372,5 +373,24 @@ func TestIterDuringGrow(t *testing.T) {
 	}
 	for k := range expected {
 		t.Errorf("iter missing key: %d", k)
+	}
+}
+
+func TestString(t *testing.T) {
+	m := New[[]byte, struct{}](bytes.Equal, maphash.Bytes,
+		KeyElem[[]byte, struct{}]{[]byte("abc"), struct{}{}},
+		KeyElem[[]byte, struct{}]{[]byte("def"), struct{}{}},
+		KeyElem[[]byte, struct{}]{[]byte("ghi"), struct{}{}},
+	)
+	s := m.String()
+	expected := "gomap.Map[[100 101 102]:{} [103 104 105]:{} [97 98 99]:{}]"
+	if expected != s {
+		t.Errorf("Got: %q Expected: %q", s, expected)
+	}
+
+	s = String(m, func(b []byte) string { return string(b) }, func(struct{}) string {return "✅"})
+	expected = "gomap.Map[abc:✅ def:✅ ghi:✅]"
+	if s != expected {
+		t.Errorf("Got: %q Expected: %q", s, expected)
 	}
 }
