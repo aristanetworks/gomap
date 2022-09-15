@@ -34,14 +34,14 @@ to diagnose bugs.
 
 The following requirements are the user's responsibility to follow:
 
-1. equal(a, b) => hash(a) == hash(b)
+1. `equal(a, b)` => `hash(a) == hash(b)`
 
-1. equal(a, a) must be true for all values of a. Be careful around NaN
+1. `equal(a, a)` must be true for all values of `a`. Be careful around NaN
    float values. Go's built-in `map` has special cases for handling
    this, but `Map` does not.
 
 1. If a key in a `Map` contains references -- such as pointers, maps,
-   or slices -- modifying the referefenced data in a way that effects
+   or slices -- modifying the referenced data in a way that effects
    the result of the equal or hash functions will result in undefined
    behavior.
 
