@@ -1,5 +1,7 @@
 # gomap
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/aristanetworks/gomap.svg)](https://pkg.go.dev/github.com/aristanetworks/gomap)
+
 This package reimplements Go's built-in `map` as a library using
 generics. The major difference between `gomap.Map` and `map` is that
 users of `gomap.Map` must provide their own `equal` and `hash`
