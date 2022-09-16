@@ -390,7 +390,9 @@ func TestString(t *testing.T) {
 		t.Errorf("Got: %q Expected: %q", s, expected)
 	}
 
-	s = String(m, func(b []byte) string { return string(b) }, func(struct{}) string { return "✅" })
+	s = StringFunc(m,
+		func(b []byte) string { return string(b) },
+		func(struct{}) string { return "✅" })
 	expected = "gomap.Map[abc:✅ def:✅ ghi:✅]"
 	if s != expected {
 		t.Errorf("Got: %q Expected: %q", s, expected)

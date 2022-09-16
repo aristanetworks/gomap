@@ -1000,15 +1000,26 @@ type strKE struct {
 // using fmt.Sprint. Use [String] for better control over stringifying
 // m's contents.
 func (m *Map[K, E]) String() string {
-	return String(m,
+	return StringFunc(m,
 		func(key K) string { return fmt.Sprint(key) },
 		func(elem E) string { return fmt.Sprint(elem) },
 	)
 }
 
-// String converts m to a string representation with the help of strK
-// and strE functions to stringify m's keys and elems.
-func String[K any, E any](m *Map[K, E], strK func(key K) string, strE func(elem E) string) string {
+// String converts m to a string representation using K's and E's
+// String functions.
+func String[K fmt.Stringer, E fmt.Stringer](m *Map[K, E]) string {
+	return StringFunc(m,
+		func(key K) string { return key.String() },
+		func(elem E) string { return elem.String() },
+	)
+}
+
+// StringFunc converts m to a string representation with the help of
+// strK and strE functions to stringify m's keys and elems.
+func StringFunc[K any, E any](m *Map[K, E],
+	strK func(key K) string,
+	strE func(elem E) string) string {
 	if m == nil || m.Len() == 0 {
 		return "gomap.Map[]"
 	}
