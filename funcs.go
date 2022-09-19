@@ -73,3 +73,33 @@ func StringFunc[K any, E any](m *Map[K, E],
 	b.WriteByte(']')
 	return b.String()
 }
+
+// Equal returns true if the same set of keys and elems are in m1 and
+// m2. Elements are compared using ==.
+func Equal[K any, E comparable](m1, m2 *Map[K, E]) bool {
+	if m1.Len() != m2.Len() {
+		return false
+	}
+	for it := m1.Iter(); it.Next(); {
+		e2, ok := m2.Get(it.Key())
+		if !ok || it.Elem() != e2 {
+			return false
+		}
+	}
+	return true
+}
+
+// Equal returns true if the same set of keys and elems are in m1 and
+// m2. Elements are compared using eq.
+func EqualFunc[K any, E comparable](m1, m2 *Map[K, E], eq func(E, E) bool) bool {
+	if m1.Len() != m2.Len() {
+		return false
+	}
+	for it := m1.Iter(); it.Next(); {
+		e2, ok := m2.Get(it.Key())
+		if !ok || !eq(it.Elem(), e2) {
+			return false
+		}
+	}
+	return true
+}
