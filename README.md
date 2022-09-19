@@ -18,7 +18,7 @@ built-in `map` including:
 
 - randomized hash seeds and randomized iteration order
 
-- progressive resize
+- incremental rehash
 
 - cheap best effort detection of unsafe concurrent accesses
 
