@@ -20,12 +20,7 @@ built-in `map` including:
 
 - progressive resize
 
-- cheap best effort detection of unsafe concurrent writes
-
-A notable missing feature from `gomap.Map` is detection of unsafe
-concurrent reads and writes. Detection that a read is happening while
-a write is happening required use of atomic operations, which would
-likely be too expensive to do during every read of `Map`.
+- cheap best effort detection of unsafe concurrent accesses
 
 ## Requirements
 

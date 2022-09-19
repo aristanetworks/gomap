@@ -309,13 +309,12 @@ func (m *Map[K, E]) mapaccessK(key K) (*K, *E) {
 	if m == nil || m.count == 0 {
 		return nil, nil
 	}
-	// The stdlib map uses the following code to do a cheap runtime
-	// check of concurrent reads and writes. Unfortunately, if done
-	// here the race detector will flag it.
-	//
-	// if m.flags&hashWriting != 0 {
-	// 	panic("concurrent map read and map write")
-	// }
+	// This check is disabled when the race detector is running
+	// becuase it flags this non-atomic read of m.flags, which
+	// can be concurrently updated by Map.Iter.
+	if !raceEnabled && m.flags&hashWriting != 0 {
+		panic("concurrent map read and map write")
+	}
 	hash := m.hash(m.seed, key)
 	mask := m.bucketMask()
 	b := &m.buckets[int(hash&mask)]
@@ -678,13 +677,12 @@ func (it *Iterator[K, E]) Next() bool {
 	if m == nil {
 		return false
 	}
-	// The stdlib map uses the following code to do a cheap runtime
-	// check of concurrent reads and writes. Unfortunately, if done
-	// here the race detector will flag it.
-	//
-	// if m.flags&hashWriting != 0 {
-	// 	panic("concurrent map iteration and map write")
-	// }
+	// This check is disabled when the race detector is running
+	// becuase it flags this non-atomic read of m.flags, which
+	// can be concurrently updated by Map.Iter.
+	if !raceEnabled && m.flags&hashWriting != 0 {
+		panic("concurrent map iteration and map write")
+	}
 	bucket := it.bucket
 	b := it.bptr
 	i := it.i
