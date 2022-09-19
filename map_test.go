@@ -72,7 +72,7 @@ func intHash(seed maphash.Seed, a int) uint64 {
 }
 
 func TestSetGetDelete(t *testing.T) {
-	const count = 1000000
+	const count = 1000
 	t.Run("nohint", func(t *testing.T) {
 		m := New[int, int](func(a int, b int) bool { return a == b }, intHash)
 		t.Logf("Buckets: %d Unused-overflow: %d", len(m.buckets), cap(m.buckets)-len(m.buckets))
