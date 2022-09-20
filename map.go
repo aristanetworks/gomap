@@ -74,6 +74,7 @@ package gomap
 // before the table grows. Typical tables will be somewhat less loaded.
 
 import (
+	"fmt"
 	"hash/maphash"
 	"sync/atomic"
 )
@@ -291,6 +292,16 @@ func (m *Map[K, E]) Len() int {
 		return 0
 	}
 	return m.count
+}
+
+// String converts m to a string. Keys and Elements are stringified
+// using fmt.Sprint. Use [String] for better control over stringifying
+// m's contents.
+func (m *Map[K, E]) String() string {
+	return StringFunc(m,
+		func(key K) string { return fmt.Sprint(key) },
+		func(elem E) string { return fmt.Sprint(elem) },
+	)
 }
 
 // Get returns the element associated with key and true if that key is

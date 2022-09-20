@@ -13,16 +13,6 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-// String converts m to a string. Keys and Elements are stringified
-// using fmt.Sprint. Use [String] for better control over stringifying
-// m's contents.
-func (m *Map[K, E]) String() string {
-	return StringFunc(m,
-		func(key K) string { return fmt.Sprint(key) },
-		func(elem E) string { return fmt.Sprint(elem) },
-	)
-}
-
 // String converts m to a string representation using K's and E's
 // String functions.
 func String[K fmt.Stringer, E fmt.Stringer](m *Map[K, E]) string {
