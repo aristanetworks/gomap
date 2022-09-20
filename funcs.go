@@ -91,7 +91,7 @@ func Equal[K any, E comparable](m1, m2 *Map[K, E]) bool {
 
 // Equal returns true if the same set of keys and elems are in m1 and
 // m2. Elements are compared using eq.
-func EqualFunc[K any, E comparable](m1, m2 *Map[K, E], eq func(E, E) bool) bool {
+func EqualFunc[K, E any](m1, m2 *Map[K, E], eq func(E, E) bool) bool {
 	if m1.Len() != m2.Len() {
 		return false
 	}
