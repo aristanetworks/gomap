@@ -1,0 +1,29 @@
+name: Test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+    strategy:
+      matrix:
+        go-version: [1.18.x, 1.19.x]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: ${{ matrix.go-version }}
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Test
+      if: matrix.go-version != '1.18.x'
+      run: go test -v ./...
