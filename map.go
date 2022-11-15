@@ -651,26 +651,28 @@ search:
 // Iter instantiates an Iterator to explore the elements of the Map.
 // Ordering is undefined and is intentionally randomized.
 func (m *Map[K, E]) Iter() *Iterator[K, E] {
+	// Iter() is a small function to encourage the compiler to inline
+	// it into its caller and let `it` be kept on the stack.
+	var it Iterator[K, E]
+	m.iter(&it)
+	return &it
+}
+
+func (m *Map[K, E]) iter(it *Iterator[K, E]) {
 	if m == nil || m.count == 0 {
-		return &Iterator[K, E]{}
+		return
 	}
 	r := fastrand64()
-	it := Iterator[K, E]{
-		m: m,
-
-		// grab snapshot of bucket state
-		buckets: m.buckets,
-
-		// decide where to start
-		startBucket: int(r & m.bucketMask()),
-		offset:      uint8(r >> (64 - bucketCntBits)),
-	}
+	it.m = m
+	it.buckets = m.buckets
+	it.startBucket = int(r & m.bucketMask())
 	it.bucket = it.startBucket
+	it.offset = uint8(r >> (64 - bucketCntBits))
 
 	// Remember we have an iterator.
 	// Can run concurrently with another m.Iter().
 	atomicOr(&m.flags, iterator|oldIterator)
-	return &it
+	return
 }
 
 func atomicOr(flags *uint32, or uint32) {
