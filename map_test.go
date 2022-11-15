@@ -395,3 +395,19 @@ func TestUpdate(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkIter(b *testing.B) {
+	m := New[string, int](
+		func(a, b string) bool { return a == b },
+		maphash.String,
+		KeyElem[string, int]{"one", 1},
+		KeyElem[string, int]{"two", 2},
+		KeyElem[string, int]{"three", 3},
+	)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for it := m.Iter(); it.Next(); {
+		}
+	}
+}

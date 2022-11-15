@@ -79,3 +79,18 @@ func TestEqual(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkStringFunc(b *testing.B) {
+	m := New(bytes.Equal, maphash.Bytes,
+		KeyElem[[]byte, struct{}]{[]byte("abc"), struct{}{}},
+		KeyElem[[]byte, struct{}]{[]byte("def"), struct{}{}},
+		KeyElem[[]byte, struct{}]{[]byte("ghi"), struct{}{}},
+	)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		StringFunc(m,
+			func(b []byte) string { return string(b) },
+			func(struct{}) string { return "x" })
+	}
+}
