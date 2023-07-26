@@ -45,7 +45,15 @@ func StringFunc[K any, E any](m *Map[K, E],
 		s += len(ke.k) + len(ke.e)
 		i++
 	}
-	slices.SortFunc(strs, func(a, b strKE) bool { return a.k < b.k })
+	slices.SortFunc(strs, func(a, b strKE) int {
+		if a.k < b.k {
+			return -1
+		}
+		if a.k > b.k {
+			return +1
+		}
+		return 0
+	})
 
 	var b strings.Builder
 	b.Grow(len("gomap.Map[]") + // space for header and footer
