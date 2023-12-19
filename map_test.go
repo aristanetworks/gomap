@@ -409,6 +409,6 @@ func BenchmarkIter(b *testing.B) {
 
 func BenchmarkRand(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		fastrand64()
+		rand64()
 	}
 }

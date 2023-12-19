@@ -662,7 +662,7 @@ func (m *Map[K, E]) iter(it *Iterator[K, E]) {
 	if m == nil || m.count == 0 {
 		return
 	}
-	r := fastrand64()
+	r := rand64()
 	it.m = m
 	it.buckets = m.buckets
 	it.startBucket = int(r & m.bucketMask())

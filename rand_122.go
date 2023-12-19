@@ -4,13 +4,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build go1.19
+//go:build go1.22
 
 package gomap
 
 import (
-	_ "unsafe"
+	"math/rand/v2"
 )
 
-//go:linkname fastrand64 runtime.fastrand64
-func fastrand64() uint64
+func rand64() uint64 {
+	return rand.Uint64()
+}
