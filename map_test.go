@@ -61,14 +61,9 @@ func (m *Map[K, E]) debugString() string {
 }
 
 func intHash(seed maphash.Seed, a int) uint64 {
-	var (
-		buf [8]byte
-		h   maphash.Hash
-	)
-	h.SetSeed(seed)
+	var buf [8]byte
 	binary.LittleEndian.PutUint64(buf[:], uint64(a))
-	_, _ = h.Write(buf[:])
-	return h.Sum64()
+	return maphash.Bytes(seed, buf[:])
 }
 
 func TestSetGetDelete(t *testing.T) {
@@ -409,5 +404,11 @@ func BenchmarkIter(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		for it := m.Iter(); it.Next(); {
 		}
+	}
+}
+
+func BenchmarkRand(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		fastrand64()
 	}
 }
