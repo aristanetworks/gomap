@@ -4,7 +4,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build goexperiment.rangefunc
+//go:build go1.23
 
 package gomap
 
@@ -29,6 +29,14 @@ func TestRangeFuncs(t *testing.T) {
 			"Street": "ST",
 			"Court":  "CT",
 		}
+		// ensure break works
+		for k, v := range m.All() {
+			if exp[k] != v {
+				t.Errorf("k=%q exp=%q got=%q", k, exp[k], v)
+			}
+			break
+		}
+
 		got := make(map[string]string)
 		for k, v := range m.All() {
 			got[k] = v
@@ -44,6 +52,14 @@ func TestRangeFuncs(t *testing.T) {
 			"Street": struct{}{},
 			"Court":  struct{}{},
 		}
+		// ensure break works
+		for k := range m.Keys() {
+			if _, ok := exp[k]; !ok {
+				t.Errorf("k=%q not found", k)
+			}
+			break
+		}
+
 		got := make(map[string]struct{})
 		for k := range m.Keys() {
 			got[k] = struct{}{}
@@ -59,6 +75,14 @@ func TestRangeFuncs(t *testing.T) {
 			"ST":  struct{}{},
 			"CT":  struct{}{},
 		}
+		// ensure break works
+		for k := range m.Values() {
+			if _, ok := exp[k]; !ok {
+				t.Errorf("k=%q not found", k)
+			}
+			break
+		}
+
 		got := make(map[string]struct{})
 		for k := range m.Values() {
 			got[k] = struct{}{}
