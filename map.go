@@ -76,7 +76,6 @@ package gomap
 import (
 	"fmt"
 	"hash/maphash"
-	"sync/atomic"
 )
 
 const (
@@ -673,14 +672,6 @@ func (m *Map[K, E]) iter(it *Iterator[K, E]) {
 	// Can run concurrently with another m.Iter().
 	atomicOr(&m.flags, iterator|oldIterator)
 	return
-}
-
-func atomicOr(flags *uint32, or uint32) {
-	old := atomic.LoadUint32(flags)
-	for !atomic.CompareAndSwapUint32(flags, old, old|or) {
-		// force re-reading from memory
-		old = atomic.LoadUint32(flags)
-	}
 }
 
 // Next moves the iterator to the next element. Next returns false
