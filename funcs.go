@@ -8,9 +8,8 @@ package gomap
 
 import (
 	"fmt"
+	"slices"
 	"strings"
-
-	"golang.org/x/exp/slices"
 )
 
 // String converts m to a string representation using K's and E's

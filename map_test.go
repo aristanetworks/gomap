@@ -10,11 +10,10 @@ import (
 	"encoding/binary"
 	"fmt"
 	"hash/maphash"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
-
-	"golang.org/x/exp/slices"
 )
 
 func (m *Map[K, E]) debugString() string {
