@@ -45,13 +45,7 @@ func StringFunc[K any, E any](m *Map[K, E],
 		i++
 	}
 	slices.SortFunc(strs, func(a, b strKE) int {
-		if a.k < b.k {
-			return -1
-		}
-		if a.k > b.k {
-			return +1
-		}
-		return 0
+		return strings.Compare(a.k, b.k)
 	})
 
 	var b strings.Builder
