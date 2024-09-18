@@ -649,6 +649,9 @@ search:
 
 // Iter instantiates an Iterator to explore the elements of the Map.
 // Ordering is undefined and is intentionally randomized.
+//
+// Prefer [Map.All] over Iter when using go1.23 or later as it works
+// with for-range loops and has less overhead.
 func (m *Map[K, E]) Iter() *Iterator[K, E] {
 	// Iter() is a small function to encourage the compiler to inline
 	// it into its caller and let `it` be kept on the stack.
