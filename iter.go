@@ -8,7 +8,10 @@
 
 package gomap
 
-import "iter"
+import (
+	"iter"
+	"math/rand/v2"
+)
 
 // All returns an iterator over key-value pairs from m.
 func (m *Map[K, E]) All() iter.Seq2[K, E] {
@@ -24,7 +27,7 @@ func (m *Map[K, E]) iterFunc(yield func(k K, e E) bool) {
 	atomicOr(&m.flags, iterator|oldIterator)
 
 	var (
-		r           = rand64()
+		r           = rand.Uint64()
 		buckets     = m.buckets
 		startBucket = int(r & m.bucketMask())
 		nextBucket  = startBucket

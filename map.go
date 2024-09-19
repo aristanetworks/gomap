@@ -76,6 +76,7 @@ package gomap
 import (
 	"fmt"
 	"hash/maphash"
+	"math/rand/v2"
 )
 
 const (
@@ -664,7 +665,7 @@ func (m *Map[K, E]) iter(it *Iterator[K, E]) {
 	if m == nil || m.count == 0 {
 		return
 	}
-	r := rand64()
+	r := rand.Uint64()
 	it.m = m
 	it.buckets = m.buckets
 	it.startBucket = int(r & m.bucketMask())
